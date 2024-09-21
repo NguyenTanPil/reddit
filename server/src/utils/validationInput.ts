@@ -25,6 +25,18 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
 		};
 	}
 
+	if (registerInput.username.includes('@')) {
+		return {
+			message: 'Invalid username',
+			errors: [
+				{
+					field: 'username',
+					message: 'Username must not be include @ symbol',
+				},
+			],
+		};
+	}
+
 	if (registerInput.password.length <= 2) {
 		return {
 			message: 'Invalid password',
