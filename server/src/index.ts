@@ -9,6 +9,12 @@ import { buildSchema } from 'type-graphql';
 import { HelloResolver } from './resolvers/hello';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
 import { UserResolver } from './resolvers/user';
+import mongoose from 'mongoose';
+import MongoStore from 'connect-mongo';
+import session from 'express-session';
+import { __prod__, COOKIE_NAME } from './constants';
+import { Context } from './types/Context';
+import cors from 'cors';
 
 const main = async () => {
 	await createConnection({
@@ -23,11 +29,41 @@ const main = async () => {
 
 	const app = express();
 
+	// cors
+	const corsOptions = {
+		origin: 'http://localhost:300', //Your Client, do not write '*'
+		credentials: true,
+	};
+	app.use(cors(corsOptions));
+
+	// session cookie store
+	const mongoUrl = `mongodb+srv://${process.env.SESSION_DB_USERNAME_DEV}:${encodeURIComponent(
+		process.env.SESSION_DB_PASSWORD_DEV!,
+	)}@reddit.zhwmb.mongodb.net/?retryWrites=true&w=majority&appName=reddit`;
+	await mongoose.connect(mongoUrl);
+	// app.set('trust proxy', 1);
+	app.use(
+		session({
+			name: COOKIE_NAME,
+			store: MongoStore.create({ mongoUrl }),
+			cookie: {
+				maxAge: 1000 * 60 * 60,
+				httpOnly: true, // front end can't access the value
+				secure: __prod__, // only work https,
+				sameSite: 'lax', // protection against CSFR attacks
+			},
+			secret: process.env.SESSION_SECRET!,
+			saveUninitialized: false, // don't save empty session,
+			resave: false,
+		}),
+	);
+
 	const apolloServer = new ApolloServer({
 		schema: await buildSchema({
 			resolvers: [HelloResolver, UserResolver],
 			validate: false,
 		}),
+		context: ({ req, res }): Context => ({ req, res }),
 		plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
 	});
 

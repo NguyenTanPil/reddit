@@ -1,10 +1,12 @@
 import argon2d from 'argon2';
-import { Arg, Mutation, Resolver } from 'type-graphql';
+import { Arg, Ctx, Mutation, Resolver } from 'type-graphql';
 import { User } from '../entities/User';
 import { UserMutationResponse } from '../types/UserMutationResponse';
 import { RegisterInput } from '../types/RegisterInput';
 import { validateRegisterInput } from '../utils/validationInput';
 import { LoginInput } from '../types/LoginInput';
+import { Context } from '../types/Context';
+import { COOKIE_NAME } from '../constants';
 
 @Resolver()
 export class UserResolver {
@@ -71,7 +73,10 @@ export class UserResolver {
 	}
 
 	@Mutation((_return) => UserMutationResponse)
-	async login(@Arg('loginInput') { usernameOrEmail, password }: LoginInput): Promise<UserMutationResponse> {
+	async login(
+		@Arg('loginInput') { usernameOrEmail, password }: LoginInput,
+		@Ctx() { req }: Context,
+	): Promise<UserMutationResponse> {
 		try {
 			const query = usernameOrEmail.includes('@') ? { email: usernameOrEmail } : { username: usernameOrEmail };
 			const existingUser = await User.findOne({
@@ -106,6 +111,9 @@ export class UserResolver {
 				};
 			}
 
+			// save user information to session
+			req.session.userId = existingUser.id;
+
 			return {
 				code: 200,
 				success: true,
@@ -119,5 +127,20 @@ export class UserResolver {
 				message: `Internal error: ${error.message}`,
 			};
 		}
+	}
+
+	@Mutation((_return) => Boolean)
+	logout(@Ctx() { req, res }: Context): Promise<boolean> {
+		return new Promise((resolve, _reject) => {
+			res.clearCookie(COOKIE_NAME);
+
+			req.session.destroy((error) => {
+				if (error) {
+					console.log('DESTROYING SESSION ERROR', error);
+					resolve(false);
+				}
+				resolve(true);
+			});
+		});
 	}
 }
