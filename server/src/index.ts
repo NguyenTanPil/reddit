@@ -1,20 +1,21 @@
 require('dotenv').config();
-import 'reflect-metadata';
-import express from 'express';
-import { createConnection } from 'typeorm';
-import { User } from './entities/User';
-import { Post } from './entities/Post';
-import { ApolloServer } from 'apollo-server-express';
-import { buildSchema } from 'type-graphql';
-import { HelloResolver } from './resolvers/hello';
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
-import { UserResolver } from './resolvers/user';
-import mongoose from 'mongoose';
+import { ApolloServer } from 'apollo-server-express';
 import MongoStore from 'connect-mongo';
-import session from 'express-session';
-import { __prod__, COOKIE_NAME } from './constants';
-import { Context } from './types/Context';
 import cors from 'cors';
+import express from 'express';
+import session from 'express-session';
+import mongoose from 'mongoose';
+import 'reflect-metadata';
+import { buildSchema } from 'type-graphql';
+import { createConnection } from 'typeorm';
+import { __prod__, COOKIE_NAME } from './constants';
+import { Post } from './entities/Post';
+import { User } from './entities/User';
+import { HelloResolver } from './resolvers/hello';
+import { PostResolver } from './resolvers/post';
+import { UserResolver } from './resolvers/user';
+import { Context } from './types/Context';
 
 const main = async () => {
 	await createConnection({
@@ -60,7 +61,7 @@ const main = async () => {
 
 	const apolloServer = new ApolloServer({
 		schema: await buildSchema({
-			resolvers: [HelloResolver, UserResolver],
+			resolvers: [HelloResolver, UserResolver, PostResolver],
 			validate: false,
 		}),
 		context: ({ req, res }): Context => ({ req, res }),

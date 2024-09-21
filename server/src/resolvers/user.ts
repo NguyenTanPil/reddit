@@ -11,7 +11,10 @@ import { COOKIE_NAME } from '../constants';
 @Resolver()
 export class UserResolver {
 	@Mutation((_returns) => UserMutationResponse)
-	async register(@Arg('registerInput') registerInput: RegisterInput): Promise<UserMutationResponse> {
+	async register(
+		@Arg('registerInput') registerInput: RegisterInput,
+		@Ctx() { req }: Context,
+	): Promise<UserMutationResponse> {
 		const validateRegisterInputError = validateRegisterInput(registerInput);
 
 		if (validateRegisterInputError !== null) {
@@ -56,6 +59,7 @@ export class UserResolver {
 				password: hashPassword,
 			});
 			const createdUser = await User.save(newUser);
+			req.session.userId = createdUser.id;
 
 			return {
 				code: 200,
