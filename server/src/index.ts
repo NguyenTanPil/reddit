@@ -32,7 +32,7 @@ const main = async () => {
 
 	// cors
 	const corsOptions = {
-		origin: 'http://localhost:300', //Your Client, do not write '*'
+		origin: 'http://localhost:4000', //Your Client, do not write '*'
 		credentials: true,
 	};
 	app.use(cors(corsOptions));
@@ -72,7 +72,7 @@ const main = async () => {
 	apolloServer.applyMiddleware({ app, cors: false });
 
 	const PORT = process.env.PORT || 3000;
-	app.listen(3000, () =>
+	app.listen(PORT, () =>
 		console.log(
 			`Server started on post ${PORT}. GraphQl server started on localhost:${PORT}${apolloServer.graphqlPath}`,
 		),
